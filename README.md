@@ -1,24 +1,31 @@
 ## Synopsis
 
-CircularJS is a library that serializes complex javascript objects with cyclic references.
+CircularJS is a library that serializes complex javascript objects with cyclic references, something that JSON.stringify can't do.
 
 ## Code Example
 
 ```
-var serialized = circular.serialize(object); // object is a complex JS object with cyclic relationships that JSON.stringify can't handle  
-localStorage.setItem('ananiasGame', serialized); // Or do what you need with the serialized data
-console.log(JSON.parse(serialized)); // Check what the serialized object looks like, it has two parts: the object itself and a references table
+var serialized = circular.serialize(object); // "object" is a complex JS object with cyclic relationships  
+localStorage.setItem('object', serialized); // Or do what you need with the serialized data
+console.log(JSON.parse(serialized)); // Check what the serialized object looks like
 var deserialized = circular.parse(serialized); // Magic happens
 ```
 	
-In order to serialize object, you need to add a _c attribute, there is a helper function for that
+In order to serialize an object, you need to add a "_c" attribute to it, there is a helper function for that:
 ```
 var complexSerializableObject = {
         _c: circular.register('Object Type');
 }
 ```
  
-If you are using classes, you should add that call to the constructor
+If you are using classes, you should add that call to the constructor, ie:
+```
+function Person(name, phone){
+	this.name = name;
+	this.phone = phone;
+	this._c = circular.register('Person');
+}
+```
 
 Or, if you are absolutely sure the object won't have cycling relationships (and to save memory)
 ```
@@ -35,7 +42,7 @@ circular.setTransient('Object Type', 'transientField');
 
 ## Motivation
 
-Sometimes you need to serialize complex objects, for example to save the state of a JavaScript game.
+Sometimes you just need to serialize complex objects, for example to save the state of a JavaScript game.
 
 ## Installation
 
