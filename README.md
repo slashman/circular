@@ -4,25 +4,34 @@ CircularJS is a library that serializes complex javascript objects with cyclic r
 
 ## Code Example
 
- var serialized = circular.serialize(object); // object is a complex JS object with cyclic relationships that JSON.stringify can't handle  
- localStorage.setItem('ananiasGame', serialized); // Or do what you need with the serialized data
- console.log(JSON.parse(serialized)); // Check what the serialized object looks like, it has two parts: the object itself and a references table
- var deserialized = circular.parse(serialized); // Magic happens
+```
+var serialized = circular.serialize(object); // object is a complex JS object with cyclic relationships that JSON.stringify can't handle  
+localStorage.setItem('ananiasGame', serialized); // Or do what you need with the serialized data
+console.log(JSON.parse(serialized)); // Check what the serialized object looks like, it has two parts: the object itself and a references table
+var deserialized = circular.parse(serialized); // Magic happens
+```
 	
 In order to serialize object, you need to add a _c attribute, there is a helper function for that
- var complexSerializableObject = {
-   _c: circular.register('Object Type');
- }
+```
+var complexSerializableObject = {
+        _c: circular.register('Object Type');
+}
+```
  
 If you are using classes, you should add that call to the constructor
 
 Or, if you are absolutely sure the object won't have cycling relationships (and to save memory)
- var simpleSerializableObject = {
-   _c: circular.setSafe();
- }
+```
+var simpleSerializableObject = {
+       _c: circular.setSafe();
+}
+```
 
 It also allows marking a field as transient:
- circular.setTransient('Object Type', 'transientField');
+
+```
+circular.setTransient('Object Type', 'transientField');
+```
 
 ## Motivation
 
