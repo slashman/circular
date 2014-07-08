@@ -3,7 +3,12 @@
  */
 var circular = {
 	currentId: 1,
-	transients: {}
+	transients: {},
+	reviverFunctions: {}
+};
+
+circular.setReviver = function(typeId, reviverFunction){
+	circular.reviverFunctions[typeId] = reviverFunction;
 };
 
 /**
@@ -116,13 +121,13 @@ circular._serializeObject = function (object, objectMap){
 	return serializableObject;
 };
 
-circular.parse = function(json){
+circular.parse = function(json, reviverData){
 	var serializedObject = JSON.parse(json);
 	var objectMap = [];
-	return circular._deserializeObject(serializedObject.object, serializedObject.references, objectMap);
+	return circular._deserializeObject(serializedObject.object, serializedObject.references, objectMap, reviverData);
 };
 
-circular._deserializeObject = function (object, references, objectMap){
+circular._deserializeObject = function (object, references, objectMap, reviverData){
 	var deserializedObject = null;
 	if (isArray(object)){
 		deserializedObject = [];
@@ -143,9 +148,12 @@ circular._deserializeObject = function (object, references, objectMap){
 			attribute.type && 
 			attribute.uid){
 			if (!objectMap["x"+attribute.uid]){
-				circular._deserializeObject(references["x"+attribute.uid], references, objectMap);
+				circular._deserializeObject(references["x"+attribute.uid], references, objectMap, reviverData);
 			}
 			deserializedObject[componentName] = objectMap["x"+attribute.uid];
+			if (circular.reviverFunctions[attribute.type]){
+				circular.reviverFunctions[attribute.type](deserializedObject[componentName], reviverData);
+			}
 		} else {
 			deserializedObject[componentName] = object[componentName];
 		}
