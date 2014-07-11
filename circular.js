@@ -1,12 +1,21 @@
-/**
- * Base circular object. 
- */
 var circular = {
 	currentId: 1,
 	transients: {},
-	reviverFunctions: {}
+	reviverFunctions: {},
+	prototypes: {}
 };
 
+/**
+ * All classes for Circular objects should be registered
+ */
+circular.registerClass = function(type, class_){
+	circular.prototypes[type] = class_;
+};
+
+/**
+ * Optionally, some classes may have reviver associated
+ * TODO: Merge with registerClass
+ */
 circular.setReviver = function(typeId, reviverFunction){
 	circular.reviverFunctions[typeId] = reviverFunction;
 };
@@ -18,7 +27,7 @@ circular.setReviver = function(typeId, reviverFunction){
 circular.register = function(type){
 	return {
 		type: type,
-		uid: circular.getUID()
+		uid: circular.currentId++
 	};
 };
 
@@ -33,10 +42,10 @@ circular.setSafe = function(){
 	};
 };
 
-circular.getUID = function(){
-	return circular.currentId++;
-};
-
+/**
+ * Marks a field as transient for a type
+ * TODO: Merge with registerClass as an additional param
+ */
 circular.setTransient = function(type, attributeName) {
 	if (!circular.transients[type]){
 		circular.transients[type] = {};
@@ -44,7 +53,7 @@ circular.setTransient = function(type, attributeName) {
 	circular.transients[type][attributeName] = true;
 };
 
-circular.isTransient = function(type, attributeName) {
+circular._isTransient = function(type, attributeName) {
 	return circular.transients[type] && circular.transients[type][attributeName];
 };
 
@@ -76,10 +85,10 @@ circular._serializeObject = function (object, objectMap){
 		// Reference the serialized object in the object map
 		objectMap["x"+object._c.uid] = serializableObject;
 	}
-	for (component in object){
+	for (var component in object){
 		var componentName = component;
 		var attribute = object[componentName];
-		if (!isArray(object) && circular.isTransient(object._c.type, componentName)){
+		if (!isArray(object) && circular._isTransient(object._c.type, componentName)){
 			// Skip transient attributes
 			continue;
 		} else if (typeof attribute == 'function'){
@@ -89,17 +98,9 @@ circular._serializeObject = function (object, objectMap){
 			// Circular metadata is saved verbatim
 			serializableObject[componentName] = attribute;
 		} else if (isArray(attribute)){
-			// Arrays as saved as arrays but their contents are serialized
-			serializableObject[componentName] = [];
-			for (var i = 0; i < attribute.length; i++){
-				try {
-					serializableObject[componentName][i] = circular._serializeObject(attribute[i], objectMap);
-				} catch (error){
-					if (typeof error == 'string' && error.indexOf("...", error.length - 3) !== -1)
-						throw error +", on Array "+componentName+" on circular type "+object._c.type+".";
-				}
-			}
-		} else if (typeof attribute !== "object"){
+			// Arrays are always serialized, no need to check for metadata
+			serializableObject[componentName] = circular._serializeObject(attribute, objectMap);
+		} else if (attribute == null || typeof attribute !== "object"){
 			// Native values are saved verbatim
 			serializableObject[componentName] = attribute;
 		} else {
@@ -131,31 +132,37 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 	var deserializedObject = null;
 	if (isArray(object)){
 		deserializedObject = [];
-	} else {
-		deserializedObject = {};
-	}
-	if (object._c)
+	} else if (object._c){
+		if (circular.prototypes[object._c.type]){
+			deserializedObject = new circular.prototypes[object._c.type]();
+		} else {
+			console.log("Warning: prototype for "+object._c.type+" was not found, using {}");
+			deserializedObject = {};
+		}
 		objectMap["x"+object._c.uid] = deserializedObject;
-	for (component in object){
+	}
+	for (var component in object){
 		var componentName = component;
 		var attribute = object[componentName]; 
 		if (componentName === '_c'){
 			deserializedObject[componentName] = object[componentName];
 			// Circular metadata is restored verbatim
+		} else if (isArray(attribute)){
+			deserializedObject[componentName] = circular._deserializeObject(attribute, references, objectMap, reviverData);
 		} else if (
-			typeof attribute == "object" && 
-			!isArray(attribute) &&
+			attribute &&
+			typeof attribute == "object" &&
 			attribute.type && 
 			attribute.uid){
 			if (!objectMap["x"+attribute.uid]){
 				circular._deserializeObject(references["x"+attribute.uid], references, objectMap, reviverData);
+				if (circular.reviverFunctions[attribute.type]){
+					circular.reviverFunctions[attribute.type](objectMap["x"+attribute.uid], reviverData);
+				}
 			}
 			deserializedObject[componentName] = objectMap["x"+attribute.uid];
-			if (circular.reviverFunctions[attribute.type]){
-				circular.reviverFunctions[attribute.type](deserializedObject[componentName], reviverData);
-			}
 		} else {
-			deserializedObject[componentName] = object[componentName];
+			deserializedObject[componentName] = attribute;
 		}
 	}
 	return deserializedObject;
