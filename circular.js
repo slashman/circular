@@ -140,6 +140,10 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 			deserializedObject = {};
 		}
 		objectMap["x"+object._c.uid] = deserializedObject;
+		if (object._c.uid > circular.currentId){
+			// Update the circular currentId index, to avoid new objects to overlap with existing for future cerealizations
+			circular.currentId = object._c.uid;
+		}
 	}
 	for (var component in object){
 		var componentName = component;
