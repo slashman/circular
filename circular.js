@@ -1,23 +1,17 @@
 var circular = {
 	currentId: 1,
-	transients: {},
-	reviverFunctions: {},
-	prototypes: {}
+	classes: {},
+	transients: {}
 };
 
 /**
  * All classes for Circular objects should be registered
  */
-circular.registerClass = function(type, class_){
-	circular.prototypes[type] = class_;
-};
-
-/**
- * Optionally, some classes may have reviver associated
- * TODO: Merge with registerClass
- */
-circular.setReviver = function(typeId, reviverFunction){
-	circular.reviverFunctions[typeId] = reviverFunction;
+circular.registerClass = function(typeId, class_, metadata){
+	if (!metadata)
+		metadata = {};
+	metadata.prototype = class_
+	circular.classes[typeId] = metadata;
 };
 
 /**
@@ -133,8 +127,8 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 	if (isArray(object)){
 		deserializedObject = [];
 	} else if (object._c){
-		if (circular.prototypes[object._c.type]){
-			deserializedObject = new circular.prototypes[object._c.type]();
+		if (circular.classes[object._c.type] && circular.classes[object._c.type].prototype){
+			deserializedObject = new circular.classes[object._c.type].prototype();
 		} else {
 			console.log("Warning: prototype for "+object._c.type+" was not found, using {}");
 			deserializedObject = {};
@@ -160,8 +154,8 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 			attribute.uid){
 			if (!objectMap["x"+attribute.uid]){
 				circular._deserializeObject(references["x"+attribute.uid], references, objectMap, reviverData);
-				if (circular.reviverFunctions[attribute.type]){
-					circular.reviverFunctions[attribute.type](objectMap["x"+attribute.uid], reviverData);
+				if (circular.classes[attribute.type] && circular.classes[attribute.type].reviver){
+					circular.classes[attribute.type].reviver(objectMap["x"+attribute.uid], reviverData);
 				}
 			}
 			deserializedObject[componentName] = objectMap["x"+attribute.uid];
