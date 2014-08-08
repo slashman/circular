@@ -1,7 +1,6 @@
 var circular = {
 	currentId: 1,
-	classes: {},
-	transients: {}
+	classes: {}
 };
 
 /**
@@ -36,19 +35,8 @@ circular.setSafe = function(){
 	};
 };
 
-/**
- * Marks a field as transient for a type
- * TODO: Merge with registerClass as an additional param
- */
-circular.setTransient = function(type, attributeName) {
-	if (!circular.transients[type]){
-		circular.transients[type] = {};
-	}
-	circular.transients[type][attributeName] = true;
-};
-
 circular._isTransient = function(type, attributeName) {
-	return circular.transients[type] && circular.transients[type][attributeName];
+	return circular.classes[type] && circular.classes[type].transients && circular.classes[type].transients[attributeName];
 };
 
 /**

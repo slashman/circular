@@ -23,7 +23,6 @@ circular.test = function(){
 		age: 300,
 		country: country
 	}];
-	circular.setTransient('Person', 'age');
 	country.leader = people[0];
 	console.log("Original Data");
 	console.log(people);
@@ -36,7 +35,7 @@ circular.test = function(){
 };
 
 
-circular.testRevivers = function(){
+circular.testReviversAndTransients = function(){
 	var country = {
 		_c: {
 			uid: 1,
@@ -54,9 +53,11 @@ circular.testRevivers = function(){
 	circular.registerClass('Person', Person, {
 		reviver: function(person, reviverData){
 			reviverData.push(person);
+		},
+		transients: {
+			age: true
 		}
 	})
-	circular.setTransient('Person', 'age');
 	
 	var people = [new Person('Jhon', 400, country), new Person('Sarah', 300, country)];
 	country.leader = people[0];
@@ -77,5 +78,5 @@ circular.runTests = function(){
 	console.log("Running Test 1");
 	circular.test();
 	console.log("Running Test 2");
-	circular.testRevivers();
+	circular.testReviversAndTransients();
 }
