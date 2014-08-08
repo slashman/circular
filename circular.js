@@ -35,10 +35,6 @@ circular.setSafe = function(){
 	};
 };
 
-circular._isTransient = function(type, attributeName) {
-	return circular.classes[type] && circular.classes[type].transients && circular.classes[type].transients[attributeName];
-};
-
 /**
  * Returns a serialized version of the object, replacing all
  * object fields to pointers to a master table.
@@ -52,6 +48,17 @@ circular.serialize = function (object){
 	};
 	return JSON.stringify(returnData);
 };
+
+/**
+ * Rebuilds the original object using the classes metadata and
+ * the references table.
+ */
+circular.parse = function(json, reviverData){
+	var serializedObject = JSON.parse(json);
+	var objectMap = [];
+	return circular._deserializeObject(serializedObject.object, serializedObject.references, objectMap, reviverData);
+};
+
 
 circular._serializeObject = function (object, objectMap){
 	var serializableObject = null;
@@ -104,10 +111,8 @@ circular._serializeObject = function (object, objectMap){
 	return serializableObject;
 };
 
-circular.parse = function(json, reviverData){
-	var serializedObject = JSON.parse(json);
-	var objectMap = [];
-	return circular._deserializeObject(serializedObject.object, serializedObject.references, objectMap, reviverData);
+circular._isTransient = function(type, attributeName) {
+	return circular.classes[type] && circular.classes[type].transients && circular.classes[type].transients[attributeName];
 };
 
 circular._deserializeObject = function (object, references, objectMap, reviverData){
