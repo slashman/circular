@@ -56,7 +56,7 @@ Just reference circular.js from your project.
 
 ## API Reference
 
-Pending, check tests.js for the very easy to use examples.
+Check out the tutorial (tutorial.html) or tests.js for the very easy to use examples.
 
 ## Tests
 
