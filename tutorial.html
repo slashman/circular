@@ -1,0 +1,118 @@
+<h2>What's this about?</h2>
+If you already know what the issue with serializing circular structures is, proceed to the next section
+
+Games, and other kind of frontend JavaScript apps, often have complex structures of linked objects in memory that you'd eventually want to serialize for persistence, be it to save the game, or to keep complex user preferences, or whatnot.
+
+Modern browsers have the JSON.stringify and JSON.parse methods, and they work great for simple objects, but the moment you want to use them for a complex object you'll get...
+
+<img class="aligncenter size-full wp-image-2346" src="http://slashland.files.wordpress.com/2014/08/typeerror.png" alt="typeError" width="434" height="36" />
+
+The reason for this is that once the stringify method detects an object has a reference to another object it has already stringified, it will panic since processing it risks ending up in an infinite process, given that that object might then indirectly reference the object that's currently being stringified!
+
+CircularJS allows you to circumvent this issue by generating a table of references and flattening the objects so that they only keep a reference to that table, then you can safely serialize the base object and the table, and use that data to deserialize it back!
+<h2>Real life scenario</h2>
+Consider this simple scenario, you have a Game object you'd want to persist, and it has two attributes: One for the current Level of the game, and another one for the Player. At the same time, the Player Object contains a reference to his current level.
+
+<img class="aligncenter size-full wp-image-2347" src="http://slashland.files.wordpress.com/2014/08/untitled-2.png" alt="Untitled (2)" width="445" height="255" />
+
+Let's recreate it quickly in JavaScript.
+<pre>function Game(){
+  this.currentLevel = null;
+  this.player = null;
+}
+
+function Level(){<span style="font-size: 16px; line-height: 1.5;">}
+
+</span>function Player(){
+  this.currentLevel = null;
+}
+
+var game = new Game();
+var level = new Level();
+var player = new Player();
+game.currentLevel = level;
+game.player = player;
+player.currentLevel = level;</pre>
+So, let's say you want to serialize your game object so that you can later resume the game, this should be simple right? let's just do:
+<pre>var serializedGame = JSON.stringify(game);
+localStorage.setItem('game', serializedGame);</pre>
+...and then, to restore, we could just do....
+<pre>var serializedGame = localStorage.getItem('game');
+var gameObject = JSON.parse(serializedGame);</pre>
+But this won't work! JSON.stringify will complain the moment you try to serialize the game object, because it finds a circular reference to the Level object, the panick!
+<h2>CircularJS to the rescue!</h2>
+You can overcome this issue using circularJS! solution is as simple as:
+<pre>var serializedGame = circular.serialize(game);
+localStorage.setItem('game', serializedGame);</pre>
+And then, when you have to load the game
+<pre>var serializedGame = localStorage.getItem('game');
+var gameObject = circular.parse(serializedGame);</pre>
+For this to work however, you'll need to add a small bit to your classes initialization:
+<pre>function Game(){
+  this._c = circular.register('Game');
+  this.currentLevel = null;
+  this.player = null;
+}
+
+function Level(){
+ this._c = circular.register('Level');
+<span style="font-size: 16px; line-height: 1.5;">}
+
+</span>function Player(){
+  this._c = circular.register('Player');
+  this.currentLevel = null;
+}
+
+</pre>
+The register function adds required metadata to your JavaScript objects, basically assigning an uniqueId to each object, as well as keeping track of what class it's an instance of.
+
+Using this metadata, circularJS is able to fully recreate the object, including the class (or rather function) it was an instance of!
+<h2>Revivers and transient fields</h2>
+The past section should cover most of the scenarios you'll need, but when it comes to real life, you might need to fine tune the process.
+
+Consider now that there are some fields you'd rather NOT serialize, but you need them to be reset when restoring the object state. That's when revivers and transient fields come to play.
+
+Continuing with our example, let's pretend that the Player object has a Sprite attribute, which is his graphical representation, the sprite depends on the Race of the player. We don't want to save it, since sprites are set up by our engine on initialization.
+<pre>function Game(){
+  this._c = circular.register('Game');
+  this.currentLevel = null;
+  this.player = null;
+}
+
+function Level(){
+ this._c = circular.register('Level');
+<span style="font-size: 16px; line-height: 1.5;">}
+
+</span>function Player(){
+  this._c = circular.register('Player');
+  this.currentLevel = null;
+  this.race = null;
+  this.sprite = null;
+}</pre>
+For this example we will also have at hand a SpriteCreator object, which is in charge of creating the sprites on runtime, it has a createSprite method which takes a spriteId, and can create sprites for the different races.
+
+What we need to do here is register the Player class on circularJS, defining the transient methods and the reviver function:
+<pre>circular.registerClass('Player', Player, {
+  transients: {
+    sprite: true
+  },
+  reviver: function(player, spriteCreator){
+    player.sprite = spriteCreator.createSprite(player.race);
+  }
+}</pre>
+This affects the behaviour of circular in two ways: it won't (try to) save the sprite when serializing the player object, and when deserializing it it will recreate the sprite object at runtime. To do this, you'll need to send the sprite creator object to the parse method:
+<pre>var serializedGame = localStorage.getItem('game');
+var gameObject = circular.parse(serializedGame, theSpriteCreator);</pre>
+<h2>"Safe" objects</h2>
+Finally, in order to save memory and processing time while parsing / serializing, you might want to declare a class to be "safe"; this means that circularJS will keep it off the reference management process and will just serialize it directly. You can use this for simple objects that do not reference other objects (just native values), or plain objects that are not meant to represent instances of classes. Be warned tho! if you add a reference to an object marked as safe, it may generate a circular structure and circularJS will fail!
+
+To mark an object as safe, use the circular.setSafe method, i.e.
+<pre>function Player(name, x, y){
+  var location = {
+    _c: circular.setSafe(),
+    x: x,
+    y: y
+  };
+  var name = name;
+}</pre>
+Circular will then understand the location object won't need to be checked for circular references, but it's YOUR responsability to keep objects from being assigned to it! :)
