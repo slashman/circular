@@ -34,10 +34,16 @@ var simpleSerializableObject = {
 }
 ```
 
-It also allows marking a field as transient:
+If you are using mocking classes using functions, you should register your classes along with
+optional metadata so that they are restored in a functional way.
 
 ```
-circular.setTransient('Object Type', 'transientField');
+circular.registerClass('Person', Person, {
+   reviver: reviverFunction, // optional, this function is invoked when parsing
+   transients: {
+      transientField1: true // optional, allows you to specify fields that should not be serialized
+   }
+});
 ```
 
 ## Motivation
@@ -50,11 +56,11 @@ Just reference circular.js from your project.
 
 ## API Reference
 
-PENDING
+Pending, check tests.js for the very easy to use examples.
 
 ## Tests
 
-Run circular.test();
+Run circular.tests(); or just open circularTest.html
 
 ## Contributors
 
