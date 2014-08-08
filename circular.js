@@ -1,4 +1,5 @@
 var circular = {
+	version: "1.1",
 	currentId: 1,
 	classes: {}
 };
