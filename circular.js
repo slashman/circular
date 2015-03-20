@@ -105,7 +105,11 @@ circular._serializeObject = function (object, objectMap){
 					serializableObject[componentName] = attribute._c;
 				}
 			} else {
-				throw "ERROR: "+componentName+" attribute from circular type "+object._c.type+" has no Circular metadata";
+				if (object._c){
+					throw "ERROR: "+componentName+" attribute from circular type "+object._c.type+" has no Circular metadata";
+				} else {
+					throw "ERROR: ["+componentName+"] attribute from non circular object has no Circular metadata";
+				}
 			}
 		}
 	}
