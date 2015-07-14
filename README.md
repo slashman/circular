@@ -2,6 +2,9 @@
 
 CircularJS is a library that serializes complex javascript objects with cyclic references, something that JSON.stringify can't do.
 
+There are already some libraries allowing to serialized objects with cyclic references, but circularJS allows you to deserialize them including
+the functions they had, so they are ready to be used as objects with behavior.
+
 ## Code Example
 
 ```
@@ -34,7 +37,7 @@ var simpleSerializableObject = {
 }
 ```
 
-If you are using mocking classes using functions, you should register your classes along with
+If you are mocking classes using functions, you should register your classes along with
 optional metadata so that they are restored in a functional way.
 
 ```
@@ -48,11 +51,25 @@ circular.registerClass('Person', Person, {
 
 ## Motivation
 
-Sometimes you just need to serialize complex objects, for example to save the state of a JavaScript game.
+Games, and other kind of JavaScript apps, often have complex structures of linked objects in memory that you'd 
+eventually want to serialize for persistence, be it to save the game, or to keep complex user preferences, or whatnot.
+
+Modern browsers have the JSON.stringify and JSON.parse methods, and they work great for simple objects, but the moment you want 
+to use them for a complex object you'll get a TypeError.
+
+The reason for this is that once the stringify method detects an object has a reference to another object it has already stringified, 
+it will panic since processing it risks ending up in an infinite process, given that that object might then indirectly reference 
+the object that's currently being stringified!
+
+CircularJS allows you to circumvent this issue by generating a table of references and flattening the objects so that they 
+only keep a reference to that table, then you can safely serialize the base object and the table, and use that data to deserialize it back!
+
+There are already some libraries allowing to serialized objects with cyclic references, but circularJS allows you to deserialize them including
+the functions they had, so they are ready to be used as objects with behavior.
 
 ## Installation
 
-Just reference circular.js from your project.
+You can use circular-browser.js directly in your browser, otherwise require('circular-functions') from npm.
 
 ## API Reference
 
@@ -60,7 +77,7 @@ Check out the tutorial (tutorial.html) or tests.js for the very easy to use exam
 
 ## Tests
 
-Run circular.tests(); or just open circularTest.html
+Run node test or just open circularTest.html
 
 ## Contributors
 

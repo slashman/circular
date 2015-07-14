@@ -1,8 +1,11 @@
 var circular = {
-	version: "1.1",
+	version: "0.0.2",
 	currentId: 1,
+	showWarnings: false,
 	classes: {}
 };
+
+module.exports = circular;
 
 /**
  * All classes for Circular objects should be registered
@@ -63,22 +66,22 @@ circular.parse = function(json, reviverData){
 
 circular._serializeObject = function (object, objectMap){
 	var serializableObject = null;
-	if (isArray(object)){
+	if (circular.isArray(object)){
 		serializableObject = new Array();
 	} else {
 		serializableObject = {};
 	}
-	if (!object._c && !isArray(object)){
+	if (!object._c && !circular.isArray(object)){
 		console.log(object);
 		throw "ERROR: "+(typeof object)+" without Circular metadata...";
-	} else if (!isArray(object)){
+	} else if (!circular.isArray(object)){
 		// Reference the serialized object in the object map
 		objectMap["x"+object._c.uid] = serializableObject;
 	}
 	for (var component in object){
 		var componentName = component;
 		var attribute = object[componentName];
-		if (!isArray(object) && circular._isTransient(object._c.type, componentName)){
+		if (!circular.isArray(object) && circular._isTransient(object._c.type, componentName)){
 			// Skip transient attributes
 			continue;
 		} else if (typeof attribute == 'function'){
@@ -87,7 +90,7 @@ circular._serializeObject = function (object, objectMap){
 		} else if (componentName === '_c'){
 			// Circular metadata is saved verbatim
 			serializableObject[componentName] = attribute;
-		} else if (isArray(attribute)){
+		} else if (circular.isArray(attribute)){
 			// Arrays are always serialized, no need to check for metadata
 			serializableObject[componentName] = circular._serializeObject(attribute, objectMap);
 		} else if (attribute == null || typeof attribute !== "object"){
@@ -122,13 +125,14 @@ circular._isTransient = function(type, attributeName) {
 
 circular._deserializeObject = function (object, references, objectMap, reviverData){
 	var deserializedObject = null;
-	if (isArray(object)){
+	if (circular.isArray(object)){
 		deserializedObject = [];
 	} else if (object._c){
 		if (circular.classes[object._c.type] && circular.classes[object._c.type].prototype){
 			deserializedObject = new circular.classes[object._c.type].prototype();
 		} else {
-			console.log("Warning: prototype for "+object._c.type+" was not found, using {}");
+			if (circular.showWarnings)
+				console.log("Warning: prototype for "+object._c.type+" was not found, using {}");
 			deserializedObject = {};
 		}
 		objectMap["x"+object._c.uid] = deserializedObject;
@@ -143,7 +147,7 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 		if (componentName === '_c'){
 			deserializedObject[componentName] = object[componentName];
 			// Circular metadata is restored verbatim
-		} else if (isArray(attribute)){
+		} else if (circular.isArray(attribute)){
 			deserializedObject[componentName] = circular._deserializeObject(attribute, references, objectMap, reviverData);
 		} else if (
 			attribute &&
@@ -164,6 +168,6 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 	return deserializedObject;
 };
 
-function isArray(object){
+circular.isArray = function (object){
 	return Object.prototype.toString.call( object ) === '[object Array]';
 }

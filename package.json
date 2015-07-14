@@ -1,0 +1,25 @@
+{
+  "name": "circular-functions",
+  "version": "0.0.2",
+  "description": "Serializes and deserializes complex JavaScript objects with cyclic references, including restoring fully functional function objects.",
+  "main": "circular.js",
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slashman/circular.git"
+  },
+  "keywords": [
+    "circular",
+    "reference",
+    "stringify",
+    "circular"
+  ],
+  "author": "Santiago Zapata <slash@slashware.net> (http://slashie.net)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/slashman/circular/issues"
+  },
+  "homepage": "https://github.com/slashman/circular"
+}
