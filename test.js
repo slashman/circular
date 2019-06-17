@@ -6,6 +6,8 @@ var circularTests = {
 		circularTests.test();
 		console.log("Running Test 2");
 		circularTests.testReviversAndTransients();
+		console.log("Running Test 3");
+		circularTests.testRootReviver();
 	},
 	test: function(){
 		var country = {
@@ -80,6 +82,35 @@ var circularTests = {
 		var errors = 0;
 		errors += assert(personList.length === 2, "personList.length === 2");
 		errors += assert(typeof personList[0].country != 'undefined', "typeof personList[0].country != 'undefined'");
+		if (errors){
+			console.log(errors+' tests failed.');
+		} else {
+			console.log('No tests failed.');
+		}
+		
+	},
+	testRootReviver: function(){
+		var Person = function (name){
+			this._c = circular.register('Person2');
+			this.name = name;
+		}
+		
+		circular.registerClass('Person2', Person, {
+			reviver: function(person, reviverData){
+				reviverData.push(person);
+			},
+			transients: {
+				age: true
+			}
+		})
+		
+		var jhon = new Person('Jhon');
+		var serialized = circular.serialize(jhon);
+		var personList = new Array();
+		var deserialized = circular.parse(serialized, personList);
+		
+		var errors = 0;
+		errors += assert(personList.length === 1, "personList.length === 1");
 		if (errors){
 			console.log(errors+' tests failed.');
 		} else {
