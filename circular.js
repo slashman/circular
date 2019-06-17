@@ -156,14 +156,14 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 			attribute.uid){
 			if (!objectMap["x"+attribute.uid]){
 				circular._deserializeObject(references["x"+attribute.uid], references, objectMap, reviverData);
-				if (circular.classes[attribute.type] && circular.classes[attribute.type].reviver){
-					circular.classes[attribute.type].reviver(objectMap["x"+attribute.uid], reviverData);
-				}
 			}
 			deserializedObject[componentName] = objectMap["x"+attribute.uid];
 		} else {
 			deserializedObject[componentName] = attribute;
 		}
+	}
+	if (object._c && circular.classes[object._c.type] && circular.classes[object._c.type].reviver){
+		circular.classes[object._c.type].reviver(deserializedObject, reviverData);
 	}
 	return deserializedObject;
 };
