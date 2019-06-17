@@ -1,9 +1,11 @@
 ## Synopsis
 
-CircularJS is a library that serializes complex javascript objects with cyclic references, something that JSON.stringify can't do.
+CircularJS is a library that serializes complex networks of javascript objects with cyclic references, something that JSON.stringify can't do.
 
 There are already some libraries allowing to serialized objects with cyclic references, but circularJS allows you to deserialize them including
 the functions they had, so they are ready to be used as objects with behavior.
+
+A tutorial is available at https://blog.slashie.net/2014/08/08/circularjs-1-1-tutorial/
 
 ## Code Example
 
@@ -37,8 +39,7 @@ var simpleSerializableObject = {
 }
 ```
 
-If you are mocking classes using functions, you should register your classes along with
-optional metadata so that they are restored in a functional way.
+If you are using classes, you should register them along with optional metadata so that they are restored in a functional way, as follows:
 
 ```
 circular.registerClass('Person', Person, {
