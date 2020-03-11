@@ -1,5 +1,5 @@
 var circular = {
-	version: "0.0.2",
+	version: "0.0.3",
 	currentId: 1,
 	showWarnings: false,
 	classes: {}
@@ -77,6 +77,7 @@ circular._serializeObject = function (object, objectMap){
 	} else if (!circular.isArray(object)){
 		// Reference the serialized object in the object map
 		objectMap["x"+object._c.uid] = serializableObject;
+		circular._prepareObject(object);
 	}
 	for (var component in object){
 		var componentName = component;
@@ -116,12 +117,30 @@ circular._serializeObject = function (object, objectMap){
 			}
 		}
 	}
+	if (!circular.isArray(object)){
+		circular._cleanupObject(object);
+	}
 	return serializableObject;
 };
 
 circular._isTransient = function(type, attributeName) {
 	return circular.classes[type] && circular.classes[type].transients && circular.classes[type].transients[attributeName];
 };
+
+circular._prepareObject = function(object) {
+	var type = object._c.type
+	if (circular.classes[type] && circular.classes[type].prepare) {
+		object.__serialData = circular.classes[type].prepare(object);
+		object.__serialData._c = this.setSafe();
+	}
+}
+
+circular._cleanupObject = function(object) {
+	var type = object._c.type
+	if (circular.classes[type] && circular.classes[type].prepare) {
+		delete object.__serialData;
+	}
+}
 
 circular._deserializeObject = function (object, references, objectMap, reviverData){
 	var deserializedObject = null;
