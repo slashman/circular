@@ -9,6 +9,8 @@ module.exports = circular;
 
 /**
  * All classes for Circular objects should be registered
+ * 
+ * TODO: Mark as deprecated, rename to registerType, document that class_ is optional
  */
 circular.registerClass = function(typeId, class_, metadata){
 	if (!metadata)
@@ -150,8 +152,6 @@ circular._deserializeObject = function (object, references, objectMap, reviverDa
 		if (circular.classes[object._c.type] && circular.classes[object._c.type].prototype){
 			deserializedObject = new circular.classes[object._c.type].prototype();
 		} else {
-			if (circular.showWarnings)
-				console.log("Warning: prototype for "+object._c.type+" was not found, using {}");
 			deserializedObject = {};
 		}
 		objectMap["x"+object._c.uid] = deserializedObject;
